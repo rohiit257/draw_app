@@ -1,3 +1,4 @@
+import { JWT_SECRET } from "@repo/backend_common/config";
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 
@@ -13,7 +14,7 @@ const authMiddleware = (req: any, res: Response, next: NextFunction) => {
 
     const token = authHeader.split(" ")[1];
 
-    jwt.verify(token, process.env.SECRET_KEY!, (err: any, decoded: any) => {
+    jwt.verify(token, JWT_SECRET!, (err: any, decoded: any) => {
         if (err) {
             console.log("JWT Error:", err);
             return res.status(401).json({
@@ -32,7 +33,8 @@ const authMiddleware = (req: any, res: Response, next: NextFunction) => {
         // Option 3: { sub: 15, email: "...", ... }
         // Option 4: { user: { id: 15, email: "..." } }
 
-        req.user = decoded;
+        
+        req.userId = decoded.id
         
         // Additional debug info
         console.log("Setting req.user to:", decoded);

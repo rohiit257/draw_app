@@ -13,3 +13,7 @@ export const LoginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
   password: z.string({ message: "Password is required" }),
 });
+
+export const Roomschema = z.object({
+  name: z.string().min(3).max(10)
+})

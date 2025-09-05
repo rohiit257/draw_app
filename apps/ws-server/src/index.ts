@@ -1,30 +1,104 @@
-import express, { Request } from 'express'
-import WebSocket from 'ws'
-import { WebSocketServer } from 'ws'
-import jwt, { JwtPayload } from 'jsonwebtoken'
+import express, { json, Request } from "express";
+import WebSocket from "ws";
+import { WebSocketServer } from "ws";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import { JWT_SECRET } from "@repo/backend_common/config";
 
-const app = express()
 
-const httpserver =  app.listen(3001)
+const app = express();
 
-const wss = new WebSocketServer({server:httpserver})
+const httpserver = app.listen(3001);
 
-wss.on('connection',(ws,req:Request)=>{
-    const url = req.url
-    if(!url){return}
+const wss = new WebSocketServer({ server: httpserver });
 
-    const queryParam = new URLSearchParams(url.split('?')[1])
-    const token = queryParam.get('token') || ""
+interface User{
+    ws: WebSocket,
+    rooms: string[]
+    userId: string
+}
 
-    const decoded  = jwt.verify(token,process.env.SECRET_KEY!)
+const users:User[] = []
 
-    if(!decoded ||!(decoded as JwtPayload).userId){
-        ws.close()
-        return
+function checkUser(token: string): string | null {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET!);
+
+    if (typeof decoded == "string") {
+      return null;
     }
-    ws.on('message',function message(data){
-        ws.send('pong')
-        console.log(data)
-    })
-    ws.send("Hello im server")
-})
+
+    if (!decoded || !decoded.id) {
+      return null;
+    }
+
+    return decoded.id;
+  } catch (e) {
+    console.log(e)
+    return null;
+  }
+ 
+}
+
+wss.on("connection", (ws, request) => {
+  const url = request.url;
+  if (!url) {
+    return;
+  }
+
+  const queryParam = new URLSearchParams(url.split("?")[1]);
+  const token = queryParam.get("token") || "";
+  const userId = checkUser(token)
+
+  if(!userId){
+    ws.close()
+    return null
+  }
+
+  users.push({
+    userId,
+    rooms:[],
+    ws
+  })
+
+  ws.on("message", function message(data:any) {
+    let parsedData
+    if(typeof data !== "string"){
+        parsedData = JSON.parse(data.toString())
+    }
+    else{
+        parsedData = JSON.parse(data)
+    }
+
+    if(parsedData.type === 'join_room'){
+        const user = users.find(x => x.ws == ws)
+        user?.rooms.push(parsedData.roomId)
+    }
+    console.log(users)
+
+    if(parsedData.type === 'leave_room'){
+        const user = users.find(x => x.ws === ws)
+        if(!user){
+            return
+        }
+        user.rooms = user?.rooms.filter(x => x === parsedData.room)
+    }
+
+    if(parsedData.type === 'chat'){
+        const roomId = parsedData.roomId
+        const message = parsedData.message
+        
+        await prisma
+        users.forEach(user =>{
+            if(user.rooms.includes(roomId)){
+                user.ws.send(JSON.stringify({
+                    type: "chat",
+                    message:message,
+                    roomId
+                }))
+                console.log(message)
+            }
+        })
+    }
+  });
+//   ws.send("Hello im server");
+});
