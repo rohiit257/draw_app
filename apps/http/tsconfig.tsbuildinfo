@@ -1,1 +1,1 @@
-{"root":["./src/index.ts","./src/middleware/authmiddleware.ts","./src/routes/authroute.ts","./src/routes/roomroute.ts","./src/validations/authvalidations.ts"],"version":"5.9.2"}
+{"root":["./src/index.ts","./src/middleware/authmiddleware.ts","./src/routes/authroute.ts","./src/routes/chatroute.ts","./src/routes/roomroute.ts","./src/validations/authvalidations.ts"],"version":"5.9.2"}

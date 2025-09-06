@@ -15,6 +15,8 @@ app.use(express.urlencoded({ extended: true }));
 
 import authRoutes from './routes/authRoute.js'
 import roomRoute from './routes/roomRoute.js'
+import chatRoute from './routes/chatRoute.js'
 
 app.use('/auth',authRoutes)
 app.use('/room',roomRoute)
+app.use('/',chatRoute)
